@@ -1,7 +1,24 @@
-import webbrowser
+import atexit
+import os
+import subprocess
+import sys
 import tempfile
 
 import pandas as pd
+
+_temp_files = []
+
+
+def _cleanup_temp_files():
+    for path in _temp_files:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    _temp_files.clear()
+
+
+atexit.register(_cleanup_temp_files)
 
 
 def show(df, max_rows=None, open_browser=True):
@@ -18,8 +35,8 @@ def show(df, max_rows=None, open_browser=True):
 
     Returns
     -------
-    str
-        The generated HTML string.
+    str or None
+        The generated HTML string when ``open_browser=False``, otherwise None.
     """
     total_rows = df.shape[0]
     if max_rows:
@@ -30,9 +47,29 @@ def show(df, max_rows=None, open_browser=True):
     if open_browser:
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".html") as f:
             f.write(html)
-            webbrowser.open(f.name)
+            _temp_files.append(f.name)
+            _open_in_browser(f.name)
+        return None
 
     return html
+
+
+def _open_in_browser(path):
+    """Open a file in the default browser without ResourceWarning."""
+    if sys.platform == "win32":
+        os.startfile(path)
+    elif sys.platform == "darwin":
+        cmd = ["open", path]
+    else:
+        cmd = ["xdg-open", path]
+
+    if sys.platform != "win32":
+        subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        ).wait()
 
 
 def _build_html(df, total_rows):

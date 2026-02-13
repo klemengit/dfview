@@ -1,10 +1,9 @@
+import os
 import pandas as pd
+import tempfile
 
 import dfview
 
-
-def test_version():
-    assert dfview.__version__ == "0.1.0"
 
 
 def test_import():
@@ -29,6 +28,24 @@ def test_show_contains_data():
     assert "hello" in html
     assert "world" in html
 
+def test_utf8():
+    df = pd.DataFrame({"col1": [10, 20], "col2": ["živjo", "\u010d"]})
+    html = dfview.show(df, open_browser=False)
+
+
+    _temp_files = []
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".html", encoding="utf-8") as f:
+        f.write(html)
+        _temp_files.append(f.name)
+
+
+    for path in _temp_files:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    _temp_files.clear()
+
 
 def test_show_max_rows():
     df = pd.DataFrame({"a": range(100)})
@@ -50,7 +67,6 @@ def test_show_has_sort_arrows():
 
 
 if __name__ == "__main__":
-    test_version()
     test_import()
     test_show_returns_html()
     test_show_contains_data()

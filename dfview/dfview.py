@@ -45,7 +45,7 @@ def show(df, max_rows=None, open_browser=True):
     html = _build_html(df, total_rows)
 
     if open_browser:
-        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".html") as f:
+        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".html", encoding="utf-8") as f:
             f.write(html)
             _temp_files.append(f.name)
             _open_in_browser(f.name)
